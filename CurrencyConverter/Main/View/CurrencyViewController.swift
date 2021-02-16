@@ -97,6 +97,31 @@ private extension CurrencyViewController {
             guard let data = data else {
                 return
             }
+            
+            do {
+                let model = try JSONDecoder().decode(RootModel.self, from: data)
+                print(model)
+//                complete(model, success)
+            } catch let DecodingError.dataCorrupted(context) {
+//                Log.i(tag: "GET_GEO", context)
+                print(context)
+            } catch let DecodingError.keyNotFound(key, context) {
+//                Log.e("Key '\(key)' not found: \(context.debugDescription)")
+//                Log.e("codingPath: \(context.codingPath)")
+                print(context)
+            } catch let DecodingError.valueNotFound(value, context) {
+//                Log.e("Value '\(value)' not found: \(context.debugDescription)")
+//                Log.e("codingPath: \(context.codingPath)")
+                print(context)
+            } catch let DecodingError.typeMismatch(type, context)  {
+//                Log.e("Type '\(type)' mismatch: \(context.debugDescription)")
+//                Log.e("codingPath: \(context.codingPath)")
+                print(context)
+            } catch {
+//                Log.e("error: \(error.localizedDescription)")
+                print(error.localizedDescription)
+            }
+            
             print(data)
         }
         dataTask.resume()

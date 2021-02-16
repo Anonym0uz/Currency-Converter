@@ -8,22 +8,22 @@
 import Foundation
 import UIKit
 
-struct RootModel {
+struct RootModel: Codable {
     var Date: String?
     var PreviousDate: String?
     var PreviousURL: String?
     var Timestamp: String?
-    var Valute: [CurrencyModel]?
+    var Valute: [String : CurrencyModel]?
 }
 
-struct CurrencyModel {
+struct CurrencyModel: Codable {
     var ID: String?
     var NumCode: String?
     var CharCode: String?
-    var Nominal: String?
+    var Nominal: Int?
     var Name: String?
-    var Value: String?
-    var Previous: String?
+    var Value: Double?
+    var Previous: Double?
 }
 
 //{
