@@ -6,22 +6,22 @@
 //
 
 import UIKit
-
-var dataTask: URLSessionDataTask?
-
-private func urlComponentsTemp(with path: String = "") -> URLComponents {
-    var urlComponents = URLComponents()
-    urlComponents.scheme = "https"
-    
-    urlComponents.host = "cbr-xml-daily.ru"
-    urlComponents.path = "/" + path
-    
-    return urlComponents
-}
+import RxSwift
+import RxCocoa
 
 class CurrencyViewController: UIViewController {
     
-    let rootStack: UIStackView = .init(type: .HStack, spacing: 10, alignment: .fill, distribution: .fillEqually)
+    // MARK: Private props
+    private let rootStack: UIStackView = .init(type: .VStack, spacing: 10, alignment: .fill, distribution: .fillEqually)
+    private let fieldsStack: UIStackView = .init(type: .HStack, spacing: 10, alignment: .fill, distribution: .fillEqually)
+    
+    private var items = PublishSubject<[String : Double]>()
+    private var currency = [String : Double]()
+    private let viewModel: CurrencyViewModelImpl = CurrencyViewModelImpl()
+    private lazy var notifier: CurrencyViewModel = viewModel
+    private let disBag = DisposeBag()
+    
+    let pickerView: CPickerView = CPickerView()
     
     let fromField: CTextField = {
         CTextField()
@@ -41,6 +41,14 @@ class CurrencyViewController: UIViewController {
             .showBorder()
     }()
     
+    let btn: UIButton = {
+        let b = UIButton(frame: .zero)
+        b.translatesAutoresizingMaskIntoConstraints = false
+        b.setTitle("Test", for: .normal)
+        b.backgroundColor = .cyan
+        return b
+    }()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -49,6 +57,8 @@ class CurrencyViewController: UIViewController {
                                   navigationTitle: "Wow, much!")
         
         setupUI()
+        setupBinding()
+        notifier.viewLoaded()
     }
     
     override func updateViewConstraints() {
@@ -59,6 +69,10 @@ class CurrencyViewController: UIViewController {
             rootStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -10),
             rootStack.topAnchor.constraint(equalTo: view.topAnchor, constant: 10),
             rootStack.heightAnchor.constraint(equalToConstant: 40),
+            
+            btn.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            btn.topAnchor.constraint(equalTo: rootStack.bottomAnchor, constant: 20),
+            btn.heightAnchor.constraint(equalToConstant: 60),
         ])
     }
 }
@@ -67,63 +81,31 @@ private extension CurrencyViewController {
     func setupUI() {
         view.backgroundColor = .systemBackground
         view.addSubview(rootStack)
-        rootStack.addArrangedSubviews([ fromField, toField ])
+        rootStack.addArrangedSubview(fieldsStack)
+        fieldsStack.addArrangedSubviews([ fromField, toField ])
+        view.addSubview(btn)
+        view.setNeedsUpdateConstraints()
+    }
+    
+    func setupBinding() {
+        viewModel
+            .data
+            .observe(on: MainScheduler.instance)
+            .bind(to: items)
+            .disposed(by: disBag)
         
-        var urlComponents = urlComponentsTemp(with: "daily_json.js")
-        urlComponents.queryItems = [
-        ]
+        items
+            .bind { (models) in
+                self.currency = models
+            }
+            .disposed(by: disBag)
         
-        guard let url = urlComponents.url else {
-            return
-        }
-
-        var request = URLRequest(url: url)
-        
-        request.httpMethod = "GET"
-                
-        let dataTask = URLSession.shared.dataTask(with: request) { (data, response, error) in
-            if let error = error as NSError? {
-                return
+        btn.rx
+            .controlEvent(.touchUpInside)
+            .bind { [self] (_) in
+                pickerView.show(on: self)
+                pickerView.setData(Array(currency.keys.sorted(by: <)))
             }
-            
-            guard let resp = response as? HTTPURLResponse else {
-                return
-            }
-            
-            guard (200...301).contains(resp.statusCode) else {
-                return
-            }
-                        
-            guard let data = data else {
-                return
-            }
-            
-            do {
-                let model = try JSONDecoder().decode(RootModel.self, from: data)
-                print(model)
-//                complete(model, success)
-            } catch let DecodingError.dataCorrupted(context) {
-//                Log.i(tag: "GET_GEO", context)
-                print(context)
-            } catch let DecodingError.keyNotFound(key, context) {
-//                Log.e("Key '\(key)' not found: \(context.debugDescription)")
-//                Log.e("codingPath: \(context.codingPath)")
-                print(context)
-            } catch let DecodingError.valueNotFound(value, context) {
-//                Log.e("Value '\(value)' not found: \(context.debugDescription)")
-//                Log.e("codingPath: \(context.codingPath)")
-                print(context)
-            } catch let DecodingError.typeMismatch(type, context)  {
-//                Log.e("Type '\(type)' mismatch: \(context.debugDescription)")
-//                Log.e("codingPath: \(context.codingPath)")
-                print(context)
-            } catch {
-//                Log.e("error: \(error.localizedDescription)")
-                print(error.localizedDescription)
-            }
-            
-            print(data)
-        }
-        dataTask.resume()
+            .disposed(by: disBag)
     }
 }

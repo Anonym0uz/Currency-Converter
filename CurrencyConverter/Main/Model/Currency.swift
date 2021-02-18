@@ -6,24 +6,25 @@
 //
 
 import Foundation
-import UIKit
-
-struct RootModel: Codable {
-    var Date: String?
-    var PreviousDate: String?
-    var PreviousURL: String?
-    var Timestamp: String?
-    var Valute: [String : CurrencyModel]?
-}
 
 struct CurrencyModel: Codable {
-    var ID: String?
-    var NumCode: String?
-    var CharCode: String?
-    var Nominal: Int?
-    var Name: String?
-    var Value: Double?
-    var Previous: Double?
+    var id: String?
+    var numCode: String?
+    var charCode: String?
+    var nominal: Int?
+    var name: String?
+    var value: Double?
+    var previous: Double?
+    
+    enum CodingKeys: String, CodingKey {
+        case id = "ID"
+        case numCode = "NumCode"
+        case charCode = "CharCode"
+        case nominal = "Nominal"
+        case name = "Name"
+        case value = "Value"
+        case previous = "Previous"
+    }
 }
 
 //{
